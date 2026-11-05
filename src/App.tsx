@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   Activity, ArrowRight, Award, BarChart3, BookOpen, Brain, Check, CheckCircle2,
   ChevronDown, ChevronRight, CircleHelp, Clock3, Compass, Download, Flame, Heart,
@@ -19,7 +19,7 @@ import {
 import type { User } from "firebase/auth";
 
 type Section = "Home" | "Tracker" | "Journal" | "Insights" | "Profile";
-type Modal = "checkin" | "challenge" | "journal" | "relapse" | "auth" | "urge" | null;
+type Modal = "onboarding" | "checkin" | "challenge" | "journal" | "relapse" | "auth" | "urge" | null;
 
 const navItems: { id: Section; icon: typeof Home }[] = [
   { id: "Home", icon: Home }, { id: "Tracker", icon: Target }, { id: "Journal", icon: BookOpen },
@@ -44,22 +44,22 @@ const learning = [
 
 function cn(...parts: (string | false | undefined)[]): string { return parts.filter(Boolean).join(" "); }
 
-function SectionTitle({ eyebrow, title, subtitle, action }: { eyebrow?: string; title: string; subtitle?: string; action?: React.ReactNode }) {
+function SectionTitle({ eyebrow, title, subtitle, action }: { eyebrow?: string; title: string; subtitle?: string; action?: ReactNode }) {
   return <div className="section-title"><div>{eyebrow && <div className="eyebrow">{eyebrow}</div>}<h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>{action}</div>;
 }
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <section className={cn("card", className)}>{children}</section>;
 }
-function Pill({ children, tone = "blue" }: { children: React.ReactNode; tone?: "blue" | "green" | "amber" | "purple" | "gray" }) {
+function Pill({ children, tone = "blue" }: { children: ReactNode; tone?: "blue" | "green" | "amber" | "purple" | "gray" }) {
   return <span className={"pill pill-" + tone}>{children}</span>;
 }
-function Empty({ icon: Icon = Compass, title, body, action }: { icon?: typeof Compass; title: string; body: string; action?: React.ReactNode }) {
+function Empty({ icon: Icon = Compass, title, body, action }: { icon?: typeof Compass; title: string; body: string; action?: ReactNode }) {
   return <div className="empty-state"><span className="empty-icon"><Icon size={22} /></span><h3>{title}</h3><p>{body}</p>{action}</div>;
 }
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return <button type="button" role="switch" aria-checked={checked} className={cn("toggle", checked && "toggle-on")} onClick={() => onChange(!checked)}><span /></button>;
 }
-function ModalShell({ title, subtitle, onClose, children, wide = false }: { title: string; subtitle?: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
+function ModalShell({ title, subtitle, onClose, children, wide = false }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <div className={cn("modal", wide && "modal-wide")} role="dialog" aria-modal="true" aria-label={title}>
       <div className="modal-head"><div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div><button className="icon-button" onClick={onClose} aria-label="Close"><X size={18} /></button></div>
@@ -74,10 +74,14 @@ function App() {
   const [modal, setModal] = useState<Modal>(null);
   const [editingJournal, setEditingJournal] = useState<JournalEntry | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<typeof learning[number] | null>(null);
-  const [today] = useState(dateKey());
+  const [today, setToday] = useState(dateKey());
   const [toast, setToast] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
+  const [hydratedUid, setHydratedUid] = useState("");
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [onboardingName, setOnboardingName] = useState("");
+  const [onboardingGoals, setOnboardingGoals] = useState<string[]>([]);
   const [syncState, setSyncState] = useState<"local" | "syncing" | "synced" | "error">("local");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiResult, setAiResult] = useState("");
@@ -100,18 +104,29 @@ function App() {
   const [relapseForm, setRelapseForm] = useState({ behaviour: "both" as RelapseEntry["behaviour"], trigger: "", emotion: "", planned: false, reflection: "" });
 
   useEffect(() => {
+    if (!data.preferences.onboardingCompleted) setModal("onboarding");
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setToday(dateKey()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     try { saveLocalData(data); } catch (error) { showToast(error instanceof Error ? error.message : "Could not save your data."); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   useEffect(() => watchAuth(async (nextUser) => {
     setUser(nextUser);
-    if (!nextUser) { setSyncState("local"); return; }
+    if (!nextUser) { setSyncState("local"); setHydratedUid(""); return; }
+    setHydratedUid("");
     setSyncState("syncing");
     try {
       const cloud = await readCloudData(nextUser.uid);
       if (cloud) setData(cloud);
       else await writeCloudData(nextUser.uid, data);
+      setHydratedUid(nextUser.uid);
       setSyncState("synced");
     } catch (error) {
       console.error(error);
@@ -120,14 +135,14 @@ function App() {
   }), []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || hydratedUid !== user.uid) return;
     setSyncState("syncing");
     const handle = window.setTimeout(async () => {
       try { await writeCloudData(user.uid, data); setSyncState("synced"); }
       catch (error) { console.error(error); setSyncState("error"); }
     }, 700);
     return () => window.clearTimeout(handle);
-  }, [data, user]);
+  }, [data, user, hydratedUid]);
 
   useEffect(() => {
     if (modal !== "urge" || urgeStep !== "timer" || timer <= 0) return;
@@ -185,6 +200,28 @@ function App() {
   const weeklyLogs = last7.map((key) => data.dailyLogs[key]).filter(Boolean);
   const averageUrge = weeklyLogs.length ? weeklyLogs.reduce((sum, log) => sum + log.urgeIntensity, 0) / weeklyLogs.length : 0;
 
+  function finishOnboarding() {
+    const challenge: Challenge = {
+      id: makeId(), ...challengeForm, status: "active", pausedDays: 0, createdAt: new Date().toISOString()
+    };
+    updateData((current) => ({
+      ...current,
+      preferences: {
+        ...current.preferences, name: onboardingName.trim(),
+        goals: onboardingGoals, onboardingCompleted: true
+      },
+      challenges: [...current.challenges, challenge]
+    }));
+    setModal(null);
+    showToast("Your personal space is ready. Start with today.");
+  }
+  function skipOnboarding() {
+    updateData((current) => ({
+      ...current,
+      preferences: { ...current.preferences, onboardingCompleted: true }
+    }));
+    setModal(null);
+  }
   function openCheckin() {
     const existing = data.dailyLogs[today];
     setCheckForm(existing ? {
@@ -198,13 +235,13 @@ function App() {
     });
     setModal("checkin");
   }
-  function saveCheckin(event: React.FormEvent) {
+  function saveCheckin(event: FormEvent) {
     event.preventDefault();
     const log: DailyLog = { ...checkForm, date: today, updatedAt: new Date().toISOString() };
     updateData((current) => ({ ...current, dailyLogs: { ...current.dailyLogs, [today]: log } }));
     setModal(null); showToast("Daily check-in saved. Thank you for checking in.");
   }
-  function saveChallenge(event: React.FormEvent) {
+  function saveChallenge(event: FormEvent) {
     event.preventDefault();
     const item: Challenge = { id: makeId(), ...challengeForm, status: "active", pausedDays: 0, createdAt: new Date().toISOString() };
     updateData((current) => ({ ...current, challenges: current.challenges.map((challenge) => challenge.status === "active" ? { ...challenge, status: "completed" } : challenge).concat(item) }));
@@ -220,7 +257,7 @@ function App() {
     }));
     showToast(activeChallenge.status === "active" ? "Challenge paused." : "Challenge resumed.");
   }
-  function saveJournal(event: React.FormEvent) {
+  function saveJournal(event: FormEvent) {
     event.preventDefault();
     const now = new Date().toISOString();
     const entry: JournalEntry = {
@@ -250,7 +287,7 @@ function App() {
     updateData((current) => ({ ...current, journalEntries: current.journalEntries.filter((entry) => entry.id !== id) }));
     showToast("Entry deleted.");
   }
-  function saveRelapse(event: React.FormEvent) {
+  function saveRelapse(event: FormEvent) {
     event.preventDefault();
     const entry: RelapseEntry = { id: makeId(), date: new Date().toISOString(), ...relapseForm };
     updateData((current) => ({ ...current, relapseEntries: [entry, ...current.relapseEntries] }));
@@ -286,7 +323,7 @@ function App() {
       setAiResult(error instanceof Error ? error.message : "AI guidance is unavailable right now.");
     } finally { setAiBusy(false); }
   }
-  async function submitAuth(event: React.FormEvent<HTMLFormElement>) {
+  async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setAuthBusy(true);
     const form = new FormData(event.currentTarget);
     try {
@@ -422,6 +459,18 @@ function App() {
     </main>
 
     <nav className="mobile-nav">{navItems.map(({ id, icon: Icon }) => <button key={id} onClick={() => setSection(id)} className={cn(section === id && "mobile-active")}><Icon size={19} /><span>{id}</span></button>)}</nav>
+
+
+    {modal === "onboarding" && <ModalShell title="Welcome to NOFAP" subtitle="Take control of your habits. Build a better you." onClose={skipOnboarding} wide>
+      <div className="modal-body onboarding-body">
+        <div className="onboarding-steps"><span className={onboardingStep >= 0 ? "step-done" : ""}>01</span><i /><span className={onboardingStep >= 1 ? "step-done" : ""}>02</span><i /><span className={onboardingStep >= 2 ? "step-done" : ""}>03</span><i /><span className={onboardingStep >= 3 ? "step-done" : ""}>04</span></div>
+        {onboardingStep === 0 && <div className="onboarding-welcome"><span className="onboarding-art"><Sparkles size={35} /></span><div className="eyebrow">A FRESH START, ON YOUR TERMS</div><h2>Make room for the person you're becoming.</h2><p>This is a private space to understand your habits, notice emotions and build routines that support you. No shame, no pressure and no unrealistic promises.</p><button className="btn btn-primary" onClick={() => setOnboardingStep(1)}>Let's get started <ArrowRight size={15} /></button></div>}
+        {onboardingStep === 1 && <div className="form-section"><h3>What would you like to work on?</h3><p>Choose all goals that feel relevant. You can update these later.</p><div className="onboarding-goals">{["Reduce compulsive pornography use", "Manage unwanted masturbation patterns", "Build better self-control", "Improve daily productivity", "Understand emotional triggers", "Develop healthier routines"].map((goal) => <button type="button" key={goal} className={cn("onboarding-goal", onboardingGoals.includes(goal) && "goal-selected")} onClick={() => setOnboardingGoals((items) => items.includes(goal) ? items.filter((item) => item !== goal) : [...items, goal])}><span>{onboardingGoals.includes(goal) ? <Check size={15} /> : <Plus size={15} />}</span>{goal}</button>)}</div></div>}
+        {onboardingStep === 2 && <div className="form-section"><h3>Choose a starting challenge</h3><p>Start small. Your challenge can be changed, paused or restarted.</p><div className="challenge-options">{(["Beginner", "Intermediate", "Advanced", "Pro"] as ChallengeKind[]).map((kind) => <button type="button" className={cn("challenge-option", challengeForm.kind === kind && "option-selected")} key={kind} onClick={() => setChallengeForm((form) => ({ ...form, kind, targetDays: kind === "Beginner" ? 30 : kind === "Intermediate" ? 60 : 90 }))}><span className="option-symbol">{kind === "Beginner" ? "🌱" : kind === "Intermediate" ? "🌿" : kind === "Advanced" ? "🌳" : "✨"}</span><b>{kind}</b><small>{kind === "Pro" ? "Custom duration" : (kind === "Beginner" ? "30" : kind === "Intermediate" ? "60" : "90") + " days"}</small></button>)}</div><div className="radio-stack">{([{ value: "pornography", label: "Reduce pornography use" }, { value: "masturbation", label: "Manage masturbation habits" }, { value: "both", label: "Track both behaviours" }, { value: "awareness", label: "Awareness without an abstinence target" }] as { value: GoalMode; label: string }[]).map((item) => <label key={item.value} className="radio-row"><input type="radio" checked={challengeForm.goalMode === item.value} onChange={() => setChallengeForm((form) => ({ ...form, goalMode: item.value }))} /><span>{item.label}</span></label>)}</div><div className="form-grid"><label className="field-label">Challenge duration<input type="number" min="1" max="3650" value={challengeForm.targetDays} onChange={(event) => setChallengeForm((form) => ({ ...form, targetDays: Math.max(1, Math.min(3650, Number(event.target.value))) }))} /></label><label className="field-label">Start date<input type="date" value={challengeForm.startDate} onChange={(event) => setChallengeForm((form) => ({ ...form, startDate: event.target.value }))} /></label></div></div>}
+        {onboardingStep === 3 && <div className="form-section"><h3>Make this space yours</h3><p>Set a display name and choose whether AI guidance should be available. AI is off until you explicitly enable and consent in Profile.</p><label className="field-label">What should we call you?<input value={onboardingName} onChange={(event) => setOnboardingName(event.target.value)} placeholder="Your first name (optional)" /></label><div className="onboarding-summary"><ShieldCheck size={18} /><span>Your check-ins and journal stay private to your account or this device. You can export or delete your data from Profile.</span></div></div>}
+        <div className="modal-actions">{onboardingStep > 0 ? <button className="btn btn-secondary" onClick={() => setOnboardingStep((step) => step - 1)}>Back</button> : <button className="btn btn-secondary" onClick={skipOnboarding}>Skip for now</button>}{onboardingStep < 3 ? <button className="btn btn-primary" onClick={() => setOnboardingStep((step) => step + 1)}>Continue <ArrowRight size={15} /></button> : <button className="btn btn-primary" onClick={finishOnboarding}>Complete setup <Check size={15} /></button>}</div>
+      </div>
+    </ModalShell>}
 
     {modal === "checkin" && <ModalShell title="Daily check-in" subtitle={formatDate(today, { weekday: "long", month: "long", day: "numeric" })} onClose={() => setModal(null)} wide>
       <form className="modal-body" onSubmit={saveCheckin}>

@@ -61,6 +61,7 @@ export interface Habit {
 
 export interface UserPreferences {
   name: string;
+  onboardingCompleted: boolean;
   goals: string[];
   aiEnabled: boolean;
   aiConsent: boolean;
@@ -93,6 +94,7 @@ export function createInitialData(): AppData {
   return {
     preferences: {
       name: "",
+      onboardingCompleted: false,
       goals: [],
       aiEnabled: false,
       aiConsent: false,

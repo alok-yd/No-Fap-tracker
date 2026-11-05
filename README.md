@@ -45,7 +45,7 @@ The Gemini key is a Firebase Functions secret. Never put it in a `VITE_*` variab
 2. From the repository root, run `firebase functions:secrets:set GEMINI_API_KEY`.
 3. Deploy with `firebase deploy --only functions`.
 
-Optional: configure `GEMINI_MODEL` as a Functions parameter. The included default is `gemini-2.5-flash`; verify Google's currently supported model list before production. AI is disabled by default. The user must enable AI and give consent in Profile. An insight request contains up to 14 structured check-ins only; journal entries and free-text reflections are excluded. The callable requires Firebase Authentication. Configure Firebase App Check and enable `enforceAppCheck` before public production deployment.
+Optional: configure `GEMINI_MODEL` as a Functions parameter. The included default is `gemini-3.8-flash`; verify Google's currently supported model list before production. AI is disabled by default. The user must enable AI and give consent in Profile. An insight request contains up to 14 structured check-ins only; journal entries and free-text reflections are excluded. The callable requires Firebase Authentication. Configure Firebase App Check and enable `enforceAppCheck` before public production deployment.
 
 ## Known limitations / production checklist
 

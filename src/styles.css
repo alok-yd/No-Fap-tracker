@@ -447,3 +447,25 @@ textarea { resize: vertical; line-height: 1.6; }
 @media (prefers-color-scheme: dark) {
   :root, html, body { color-scheme: light; background: #fff !important; color: #1e293b !important; }
 }
+
+
+.onboarding-body { padding-top: 14px; }
+.onboarding-steps { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2px 0 22px; }
+.onboarding-steps span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: #a0a7b5; background: #f3f4f7; font-size: 8px; font-weight: 800; }
+.onboarding-steps span.step-done { color: #fff; background: linear-gradient(120deg,#6f70e4,#9a77e7); }
+.onboarding-steps i { display: block; width: 38px; height: 2px; border-radius: 3px; background: #eceef4; }
+.onboarding-welcome { display: flex; align-items: center; flex-direction: column; text-align: center; padding: 7px 13px 23px; }
+.onboarding-art { width: 92px; height: 92px; display: grid; place-items: center; border-radius: 28px; color: #fff; background: radial-gradient(circle at 30% 20%,#b0a0f1,#7774e3 65%,#9c80eb); box-shadow: 0 13px 28px rgba(116,108,223,.22); margin-bottom: 20px; }
+.onboarding-welcome h2 { max-width: 390px; margin: 11px 0 8px; font: 800 25px/1.25 Manrope; letter-spacing: -.5px; }
+.onboarding-welcome p { max-width: 410px; margin: 0 0 19px; color: #8e98aa; font-size: 11px; line-height: 1.8; }
+.onboarding-goals { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-top: 15px; }
+.onboarding-goal { display: flex; align-items: center; gap: 8px; min-height: 49px; padding: 10px; text-align: left; border: 1px solid #eceef4; border-radius: 10px; color: #667187; background: #fff; font-size: 9px; line-height: 1.45; }
+.onboarding-goal > span { width: 22px; height: 22px; display: grid; place-items: center; flex: 0 0 22px; color: #9aa3b2; background: #f5f6f9; border-radius: 7px; }
+.onboarding-goal.goal-selected { border-color: #d5d2ff; color: #5f5dc0; background: #faf9ff; }
+.onboarding-goal.goal-selected > span { color: #fff; background: #7772df; }
+.onboarding-summary { display: flex; align-items: flex-start; gap: 10px; padding: 13px; color: #6e9b83; border: 1px solid #e4f2e9; background: #f7fcf8; border-radius: 10px; font-size: 9px; line-height: 1.65; }
+.onboarding-summary svg { flex: 0 0 18px; }
+@media (max-width: 680px) {
+  .onboarding-goals { grid-template-columns: 1fr; }
+  .onboarding-welcome h2 { font-size: 22px; }
+}

@@ -5,7 +5,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 initializeApp();
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
-const geminiModel = defineString("GEMINI_MODEL", { default: "gemini-2.5-flash" });
+const geminiModel = defineString("GEMINI_MODEL", { default: "gemini-3.8-flash" });
 
 type SafeLog = {
   date: string;
@@ -67,7 +67,7 @@ export const generatePersonalInsight = onCall(
       "Structured check-ins:", JSON.stringify(logs)
     ].join("\n\n");
 
-    const model = geminiModel.value().trim() || "gemini-2.5-flash";
+    const model = geminiModel.value().trim() || "gemini-3.8-flash";
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey),
       {
