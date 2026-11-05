@@ -2,6 +2,23 @@
 
 A premium white-first, mobile-responsive React + TypeScript application for compassionate habit awareness, structured challenges, journaling, urge-management practice and personal development.
 
+## Deploy on Render (Web Service)
+
+This repository includes a production Node HTTP server (server.cjs) and a Render Blueprint (render.yaml).
+
+Recommended Render settings:
+
+- Runtime: Node
+- Build command: npm install && npm run build
+- Start command: npm start
+- Health check path: /healthz
+
+The npm start script serves the Vite dist directory, supports client-side routes, caches fingerprinted assets, and listens on 0.0.0.0 using Render's PORT environment variable (default 10000). Do not run Vite's development server as the production web server. If your current Render service is already connected to this repository, keep it and verify that its Start Command is npm start after the new commit deploys.
+
+## Dependency audit
+
+Run npm audit to inspect the exact dependency advisories. Do not run npm audit fix --force blindly; it can introduce breaking major-version upgrades. Review the report, apply compatible fixes first, and rerun the build and CI.
+
 ## Firebase project configured
 
 This repository is pre-configured for Firebase project **project-01-5a1fa**. The Firebase Web SDK configuration is included as public client configuration in src/lib/firebase.ts and .env.example. Environment variables can override these defaults. Firebase Web API keys identify the project; they do not authorize access to user records. Firestore Security Rules and App Check protect data and app resources.
