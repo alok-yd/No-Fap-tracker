@@ -244,7 +244,7 @@ function App() {
   function saveChallenge(event: FormEvent) {
     event.preventDefault();
     const item: Challenge = { id: makeId(), ...challengeForm, status: "active", pausedDays: 0, createdAt: new Date().toISOString() };
-    updateData((current) => ({ ...current, challenges: current.challenges.map((challenge) => challenge.status === "active" ? { ...challenge, status: "completed" } : challenge).concat(item) }));
+    updateData((current) => ({ ...current, challenges: current.challenges.map((challenge) => challenge.status === "active" ? { ...challenge, status: "completed" as const } : challenge).concat(item) }));
     setModal(null); showToast("Your new challenge is ready.");
   }
   function toggleChallenge() {
@@ -510,6 +510,6 @@ function App() {
   </div>;
 }
 
-function WavesIcon() { return <Activity size={20} />; }
+function WavesIcon({ size = 20 }: { size?: number }) { return <Activity size={size} />; }
 
 export default App;
