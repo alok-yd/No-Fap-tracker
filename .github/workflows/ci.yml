@@ -23,7 +23,8 @@ jobs:
         run: |
           npm audit --json > /tmp/npm-audit.json || true
           node -e "const r=require('/tmp/npm-audit.json'); console.log('npm audit summary:', JSON.stringify(r.metadata?.vulnerabilities || {})); for (const [name,v] of Object.entries(r.vulnerabilities || {})) console.log(JSON.stringify({name,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable,via:v.via}));"
-          npm ls firebase @firebase/firestore @grpc/grpc-js --depth=2 || true
+          npm ls firebase @firebase/firestore @grpc/grpc-js --depth=2
+          npm audit --audit-level=moderate
       - name: Smoke-test Render server
         run: |
           PORT=10000 npm start > /tmp/nofap-server.log 2>&1 &
@@ -56,4 +57,5 @@ jobs:
         run: |
           npm audit --json > /tmp/functions-audit.json || true
           node -e "const r=require('/tmp/functions-audit.json'); console.log('Functions npm audit summary:', JSON.stringify(r.metadata?.vulnerabilities || {})); for (const [name,v] of Object.entries(r.vulnerabilities || {})) console.log(JSON.stringify({name,severity:v.severity,fixAvailable:v.fixAvailable,via:v.via}));"
-          npm ls @grpc/grpc-js glob minimatch rimraf gaxios gcp-metadata google-gax --depth=5 || true
+          npm ls @grpc/grpc-js glob minimatch rimraf gaxios gcp-metadata google-gax --depth=5
+          npm audit --audit-level=moderate

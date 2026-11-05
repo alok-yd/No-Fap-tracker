@@ -2,9 +2,7 @@
   "name": "nofap-functions",
   "private": true,
   "main": "lib/index.js",
-  "engines": {
-    "node": "22"
-  },
+  "engines": { "node": "22" },
   "scripts": {
     "build": "tsc",
     "deploy": "firebase deploy --only functions"
@@ -19,7 +17,8 @@
   },
   "overrides": {
     "@grpc/grpc-js": "^1.14.7",
-    "glob@>=9.0.0 <14.0.2": "^14.0.2",
-    "minimatch@>=7.0.0 <11.0.1": "^11.0.1"
+    "glob@>=9.0.0 <14.0.2": "^14.0.3",
+    "minimatch@>=7.0.0 <11.0.1": "^11.0.1",
+    "rimraf": "^6.1.4"
   }
 }
