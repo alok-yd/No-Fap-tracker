@@ -75,7 +75,7 @@ export const generatePersonalInsight = onCall(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.35, maxOutputTokens: 350 }
+          generationConfig: { maxOutputTokens: 350 }
         })
       }
     );
