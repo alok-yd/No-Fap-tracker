@@ -22,7 +22,8 @@ jobs:
       - name: Audit npm dependencies
         run: |
           npm audit --json > /tmp/npm-audit.json || true
-          node -e "const r=require('/tmp/npm-audit.json'); console.log('npm audit summary:', JSON.stringify(r.metadata?.vulnerabilities || {})); for (const [name,v] of Object.entries(r.vulnerabilities || {})) console.log(JSON.stringify({name,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable}));"
+          node -e "const r=require('/tmp/npm-audit.json'); console.log('npm audit summary:', JSON.stringify(r.metadata?.vulnerabilities || {})); for (const [name,v] of Object.entries(r.vulnerabilities || {})) console.log(JSON.stringify({name,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable,via:v.via}));"
+          npm ls firebase @firebase/firestore @grpc/grpc-js --depth=2 || true
       - name: Smoke-test Render server
         run: |
           PORT=10000 npm start > /tmp/nofap-server.log 2>&1 &
