@@ -5,32 +5,39 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  User
+  type User
 } from "firebase/auth";
 import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import type { AppData } from "../types";
 
 const env = import.meta.env;
+
+// Firebase Web configuration identifies the project; it is not an authorization secret.
+// Protect user data with Firebase Authentication, Firestore Security Rules and App Check.
+const firebaseConfig = {
+  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyCzedzahHLNM8NcJbf3VDosf_2XhGzMoQE",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "project-01-5a1fa.firebaseapp.com",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || "project-01-5a1fa",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "project-01-5a1fa.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "151105826761",
+  appId: env.VITE_FIREBASE_APP_ID || "1:151105826761:web:911cbf645ddfdb163dc218",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || "G-SMS7968FQD"
+};
+
 const configured = Boolean(
-  env.VITE_FIREBASE_API_KEY &&
-  env.VITE_FIREBASE_AUTH_DOMAIN &&
-  env.VITE_FIREBASE_PROJECT_ID &&
-  env.VITE_FIREBASE_APP_ID
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId
 );
 
 const firebaseApp = configured
-  ? (getApps()[0] || initializeApp({
-      apiKey: env.VITE_FIREBASE_API_KEY,
-      authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: env.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: env.VITE_FIREBASE_APP_ID
-    }))
+  ? (getApps().find((app) => app.name === "[DEFAULT]") || initializeApp(firebaseConfig))
   : null;
 
 export const firebaseConfigured = Boolean(firebaseApp);
+export const firebaseProjectId = firebaseApp ? firebaseConfig.projectId : null;
 export const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 const functions = firebaseApp
@@ -46,13 +53,13 @@ export function watchAuth(callback: (user: User | null) => void): () => void {
 }
 
 export async function registerAccount(email: string, password: string): Promise<User> {
-  if (!auth) throw new Error("Firebase is not configured. Add your Firebase settings to .env.local.");
+  if (!auth) throw new Error("Firebase is not configured.");
   const result = await createUserWithEmailAndPassword(auth, email, password);
   return result.user;
 }
 
 export async function loginAccount(email: string, password: string): Promise<User> {
-  if (!auth) throw new Error("Firebase is not configured. Add your Firebase settings to .env.local.");
+  if (!auth) throw new Error("Firebase is not configured.");
   const result = await signInWithEmailAndPassword(auth, email, password);
   return result.user;
 }

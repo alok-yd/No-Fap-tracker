@@ -2,6 +2,12 @@
 
 A premium white-first, mobile-responsive React + TypeScript application for compassionate habit awareness, structured challenges, journaling, urge-management practice and personal development.
 
+## Firebase project configured
+
+This repository is pre-configured for Firebase project **project-01-5a1fa**. The Firebase Web SDK configuration is included as public client configuration in src/lib/firebase.ts and .env.example. Environment variables can override these defaults. Firebase Web API keys identify the project; they do not authorize access to user records. Firestore Security Rules and App Check protect data and app resources.
+
+Google Analytics is intentionally not initialized because this app handles sensitive personal behaviour and journal metadata. The optional measurementId is retained in config, but no analytics collection is started.
+
 ## Included
 
 - Five-section app: Home, Tracker, Journal, Insights and Profile.
@@ -13,51 +19,87 @@ A premium white-first, mobile-responsive React + TypeScript application for comp
 - Journal creation, editing, deletion, category filtering and search.
 - Non-shaming lapse reflection; history is preserved.
 - Urge toolkit: 10-minute delay, guided 4–2–6 breathing and urge-surfing steps.
-- Custom habit tracker.
-- Data-derived insights (no seeded fake progress).
+- Custom habit tracker and data-derived insights.
 - Scientific learning centre with an ICD-11 reference and evidence-aware framing.
 - Local JSON export and local-data deletion.
+- Firebase Email/Password Authentication and Firestore sync adapter.
+- Owner-scoped Firestore security rules and Firebase Hosting configuration.
 - Optional Gemini callable Function with server-side secret, authentication, explicit consent and structured input validation.
-- Firestore rules scoped to the authenticated UID.
-- Guest mode with browser localStorage; optional Firebase Auth and Firestore sync.
+
+## One-time Firebase Console setup
+
+The SDK configuration is already wired, but backend products must be enabled in your Firebase account:
+
+1. Open https://console.firebase.google.com/project/project-01-5a1fa/overview.
+2. Go to Authentication → Sign-in method. Enable Email/Password and save.
+3. Go to Firestore Database → Create database. Choose a region close to your users. Do not leave permissive test-mode rules enabled.
+4. Verify the Web App in Project settings → Your apps has the same app ID as this repository.
+5. Add your deployment hostname under Authentication → Settings → Authorized domains if it is not already listed.
+
+Firebase services cannot be activated just by committing a web SDK config file; these console steps are required once.
 
 ## Run locally
 
 Requirements: Node.js 20+ and npm.
 
-1. Copy `.env.example` to `.env.local`.
-2. Run `npm install`.
-3. Run `npm run dev`.
+```bash
+git clone https://github.com/alok-yd/No-Fap-tracker.git
+cd No-Fap-tracker
+npm install
+npm run dev
+```
 
-The app works in local-only guest mode without Firebase configuration. For cloud sync, create a Firebase project, add a Web App, enable Email/Password Authentication and Cloud Firestore, then populate `.env.local`.
+The committed Firebase configuration is used automatically. For local overrides, copy .env.example to .env.local and edit the values. .env.local is ignored by Git.
 
-Build with `npm run build`; preview with `npm run preview`.
+Build locally with npm run build; preview with npm run preview.
 
-## Firebase setup
+## Deploy Hosting and Firestore rules
 
-Deploy the included Firestore rules with `firebase deploy --only firestore:rules`. The app stores a user's private document at `users/{uid}/private/appData`. Rules permit access only when `request.auth.uid` matches `{uid}`. Test with Firebase Emulator Suite before production.
+Install and sign in to Firebase CLI:
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase projects:list
+```
+
+The .firebaserc file selects project-01-5a1fa as the default project. Deploy the static app and secure Firestore rules:
+
+```bash
+firebase deploy --only hosting,firestore:rules
+```
+
+Hosting serves the Vite dist output with an SPA rewrite to index.html. The site will be available on the project's Firebase Hosting domain after a successful deployment.
+
+## Firestore data model and rules
+
+The app writes its current state to users/{uid}/private/appData. The included rules allow that authenticated user to read and write only their own private document; all other paths are denied. Deploy with firebase deploy --only firestore:rules. Test rules with the Firebase Emulator Suite before production use. As journal history grows, consider moving daily logs and journal entries into separate subcollections to stay comfortably below Firestore's per-document size limit.
 
 ## Gemini AI setup
 
-The Gemini key is a Firebase Functions secret. Never put it in a `VITE_*` variable or frontend source.
+The Gemini key is a Firebase Functions secret. Never put it in a VITE_ variable or frontend source.
 
-1. Run `cd functions && npm install`.
-2. From the repository root, run `firebase functions:secrets:set GEMINI_API_KEY`.
-3. Deploy with `firebase deploy --only functions`.
+```bash
+cd functions
+npm install
+cd ..
+firebase functions:secrets:set GEMINI_API_KEY
+firebase deploy --only functions
+```
 
-Optional: configure `GEMINI_MODEL` as a Functions parameter. The included default is `gemini-3.8-flash`; verify Google's currently supported model list before production. AI is disabled by default. The user must enable AI and give consent in Profile. An insight request contains up to 14 structured check-ins only; journal entries and free-text reflections are excluded. The callable requires Firebase Authentication. Configure Firebase App Check and enable `enforceAppCheck` before public production deployment.
+The included default model is gemini-3.8-flash; verify Google's currently supported model list before production. AI is disabled by default and requires user consent. Insight requests contain up to 14 structured check-ins only; journal entries and free-text reflections are excluded. Configure Firebase App Check and enable enforceAppCheck before public production deployment.
 
 ## Known limitations / production checklist
 
 This is an implemented starter, not a fully audited production health product.
 
-- Guest data uses browser localStorage; it is not an encrypted vault. Use a trusted device and protect the device account.
+- Guest data uses browser localStorage; it is not an encrypted vault.
 - Cloud sync stores one private app-data document per user. Test rules, backup/restore, Firestore limits and conflict handling before relying on it.
 - Push/local notification delivery is not wired; reminder preferences are saved only.
 - Profile image upload and complete Firebase account/cloud-data deletion workflows are not implemented yet.
-- Streaks are goal-specific. Awareness mode counts recorded check-ins rather than unlogged days.
+- Awareness mode counts recorded check-ins rather than unlogged days.
 - Charts are descriptive; correlations do not establish causes.
-- Learning articles are introductory summaries; add a reviewed bibliography and editorial review before public launch.
+- Learning articles are introductory summaries; add a reviewed bibliography before public launch.
 - No diagnosis or treatment is provided. Recommend qualified professional support for severe distress or meaningful impairment.
 
 ## Safety principles
@@ -69,14 +111,3 @@ This is an implemented starter, not a fully audited production health product.
 - No unsupported semen-retention, testosterone or dopamine-reset promises.
 - AI is optional, consent-gated, non-diagnostic and excludes journal text by default.
 - Private data must never be sold or used for unrelated purposes.
-
-## Repository layout
-
-- `src/App.tsx` — application screens and interactions
-- `src/styles.css` — white-first responsive design system
-- `src/types.ts` — domain types and defaults
-- `src/lib/dates.ts` — local-date and streak helpers
-- `src/lib/storage.ts` — local storage and export
-- `src/lib/firebase.ts` — auth, Firestore and AI callable adapter
-- `functions/src/index.ts` — secure Gemini callable
-- `firestore.rules` — owner-scoped rules
