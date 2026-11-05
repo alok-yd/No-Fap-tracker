@@ -56,4 +56,4 @@ jobs:
         run: |
           npm audit --json > /tmp/functions-audit.json || true
           node -e "const r=require('/tmp/functions-audit.json'); console.log('Functions npm audit summary:', JSON.stringify(r.metadata?.vulnerabilities || {})); for (const [name,v] of Object.entries(r.vulnerabilities || {})) console.log(JSON.stringify({name,severity:v.severity,fixAvailable:v.fixAvailable,via:v.via}));"
-          npm ls @grpc/grpc-js --depth=3 || true
+          npm ls @grpc/grpc-js glob minimatch rimraf gaxios gcp-metadata google-gax --depth=5 || true
