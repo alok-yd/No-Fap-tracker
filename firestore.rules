@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All private application data is scoped to the authenticated owner.
+    match /users/{userId}/private/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Deny access by default to every document not explicitly covered above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
