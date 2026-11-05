@@ -57,7 +57,7 @@ Firebase services cannot be activated just by committing a web SDK config file; 
 
 ## Run locally
 
-Requirements: Node.js 20+ and npm.
+Requirements: Node.js 22+ and npm.
 
 ```bash
 git clone https://github.com/alok-yd/No-Fap-tracker.git
